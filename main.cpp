@@ -1,5 +1,6 @@
 #include "AabbBox.h"
 #include "SignedDistanceField.h"
+#include "string.h"
 #include <vtkActor.h>
 #include <vtkCellData.h>
 #include <vtkCellLocator.h>
@@ -17,10 +18,16 @@
 
 int main(int argc, char *argv[]) {
     // Ensure a filename is provided
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " Filename(.stl)" << std::endl;
+    if (argc < 3) {
+        std::cerr << "Usage: " << argv[0] << " Filename(.stl)"
+                  << " Dilate value"
+                  << " Spacing(cm)"
+                  << " Padding(cm)" << std::endl;
         return EXIT_FAILURE;
     }
+    double dilate_value = atof(argv[2]);
+    double spacing = atof(argv[3]);
+    double padding = atof(argv[4]);
 
     // Create a reader for the STL file
     vtkSmartPointer<vtkSTLReader> reader = vtkSmartPointer<vtkSTLReader>::New();
@@ -49,8 +56,8 @@ int main(int argc, char *argv[]) {
     double bounding_box[6];
     poly_data->GetBounds(bounding_box);
     AabbBox aabb(bounding_box[0] - 5, bounding_box[1] + 5, bounding_box[2] - 5, bounding_box[3] + 5, bounding_box[4] - 5, bounding_box[5] + 5);
-    SignedDistanceField sdf(aabb, 2.0, 2.0, 2.0);
-    std::cout << bounding_box[0] << " " << bounding_box[1] << " " << bounding_box[2] << " " << bounding_box[3] << " " << bounding_box[4] << " " << bounding_box[5] << "\n";
+    SignedDistanceField sdf(aabb, spacing, spacing, spacing);
+    std::cout << aabb.m_x_min << " " << aabb.m_x_max << " " << aabb.m_y_min << " " << aabb.m_y_max << " " << aabb.m_z_min << " " << aabb.m_z_max << "\n";
     int range_x, range_y, range_z;
     range_x = sdf.m_range_x;
     range_y = sdf.m_range_y;
@@ -95,7 +102,7 @@ int main(int argc, char *argv[]) {
     // 3. 使用 Marching Cubes 算法提取等值面
     vtkSmartPointer<vtkMarchingCubes> marchingCubes = vtkSmartPointer<vtkMarchingCubes>::New();
     marchingCubes->SetInputData(imageData);
-    marchingCubes->SetValue(0, 1); // 设置等值面值为 0.5（根据你的需求调整）
+    marchingCubes->SetValue(0, dilate_value); // 设置等值面值
 
     // 4. 获取生成的多边形数据
     marchingCubes->Update();
