@@ -1,0 +1,10 @@
+build/
+.vscode/
+*.DS_Store
+*.user
+*.autosave
+*.o
+*.doc#
+Library/
+*.so
+
