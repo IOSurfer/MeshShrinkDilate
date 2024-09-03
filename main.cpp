@@ -17,28 +17,25 @@
 #include <vtkSmartPointer.h>
 
 int main(int argc, char *argv[]) {
-    // Ensure a filename is provided
-    if (argc < 3) {
+    if (argc < 4) {
         std::cerr << "Usage: " << argv[0] << " Filename(.stl)"
                   << " Dilate value"
-                  << " Spacing(cm)"
-                  << " Padding(cm)" << std::endl;
+                  << " Spacing(mm)"
+                  << " Padding(mm)" << std::endl;
         return EXIT_FAILURE;
     }
     double dilate_value = atof(argv[2]);
     double spacing = atof(argv[3]);
     double padding = atof(argv[4]);
 
-    // Create a reader for the STL file
     vtkSmartPointer<vtkSTLReader> reader = vtkSmartPointer<vtkSTLReader>::New();
     reader->SetFileName(argv[1]);
     reader->Update();
 
-    // 使用 vtkDecimatePro 进行三角面简化
     vtkSmartPointer<vtkDecimatePro> decimate = vtkSmartPointer<vtkDecimatePro>::New();
     decimate->SetInputData(reader->GetOutput());
-    decimate->SetTargetReduction(1.0); // 将三角形数目减少50%
-    decimate->PreserveTopologyOn();    // 保持拓扑结构
+    decimate->SetTargetReduction(1.0);
+    decimate->PreserveTopologyOn();
     decimate->Update();
     vtkSmartPointer<vtkPolyData> poly_data = decimate->GetOutput();
 
@@ -50,8 +47,6 @@ int main(int argc, char *argv[]) {
     vtkSmartPointer<vtkCellLocator> cellLocator = vtkSmartPointer<vtkCellLocator>::New();
     cellLocator->SetDataSet(poly_data);
     cellLocator->BuildLocator();
-    // vtkSmartPointer<vtkImplicitPolyDataDistance> implicitPolyDataDistance = vtkSmartPointer<vtkImplicitPolyDataDistance>::New();
-    // implicitPolyDataDistance->SetInput(poly_data);
 
     double bounding_box[6];
     poly_data->GetBounds(bounding_box);
@@ -65,10 +60,8 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < range_x; i++) {
         for (int j = 0; j < range_y; j++) {
             for (int k = 0; k < range_z; k++) {
-                // Example point to test
                 std::array<double, 3> testPoint = {(i + 0.5) * sdf.m_spacing_x + aabb.m_x_min, (j + 0.5) * sdf.m_spacing_y + aabb.m_y_min, (k + 0.5) * sdf.m_spacing_z + aabb.m_z_min}; // Replace with your test point
 
-                // Find the closest point on the mesh
                 double closestPoint[3];
                 double closestPointDist2;
                 vtkIdType cellId;
@@ -77,9 +70,7 @@ int main(int argc, char *argv[]) {
 
                 cellLocator->FindClosestPoint(testPoint.data(), closestPoint, cell, cellId, subId, closestPointDist2);
 
-                // Calculate the distance (already squared)
                 double distance = sqrt(closestPointDist2);
-                // double distance = implicitPolyDataDistance->EvaluateFunction(testPoint.data());
                 sdf.setValue(i, j, k, distance);
             }
         }
@@ -99,38 +90,30 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // 3. 使用 Marching Cubes 算法提取等值面
     vtkSmartPointer<vtkMarchingCubes> marchingCubes = vtkSmartPointer<vtkMarchingCubes>::New();
     marchingCubes->SetInputData(imageData);
-    marchingCubes->SetValue(0, dilate_value); // 设置等值面值
+    marchingCubes->SetValue(0, dilate_value);
 
-    // 4. 获取生成的多边形数据
     marchingCubes->Update();
     vtkSmartPointer<vtkPolyData> polyData = marchingCubes->GetOutput();
 
-    // Create a mapper
     vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
     mapper->SetInputData(polyData);
 
-    // Create an actor
     vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
 
-    // Create a renderer
     vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
     renderer->AddActor(actor);
     renderer->SetBackground(0.1, 0.2, 0.4); // Set background color to dark blue
 
-    // Create a render window
     vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
     renderWindow->AddRenderer(renderer);
     renderWindow->SetSize(800, 600);
 
-    // Create a render window interactor
     vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
     renderWindowInteractor->SetRenderWindow(renderWindow);
 
-    // Start the interaction
     renderWindow->Render();
     renderWindowInteractor->Start();
 
