@@ -17,6 +17,7 @@
 #include <vtkRenderer.h>
 #include <vtkSTLReader.h>
 #include <vtkSTLWriter.h>
+#include <vtkSelectEnclosedPoints.h>
 #include <vtkSmartPointer.h>
 
 int main(int argc, char *argv[]) {
@@ -56,9 +57,9 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
-        vtkSmartPointer<vtkCellLocator> cellLocator = vtkSmartPointer<vtkCellLocator>::New();
-        cellLocator->SetDataSet(poly_data);
-        cellLocator->BuildLocator();
+        vtkSmartPointer<vtkCellLocator> cell_locator = vtkSmartPointer<vtkCellLocator>::New();
+        cell_locator->SetDataSet(poly_data);
+        cell_locator->BuildLocator();
 
         double bounding_box[6];
         poly_data->GetBounds(bounding_box);
@@ -69,27 +70,39 @@ int main(int argc, char *argv[]) {
         range_x = sdf.m_range_x;
         range_y = sdf.m_range_y;
         range_z = sdf.m_range_z;
+
+        vtkSmartPointer<vtkSelectEnclosedPoints> select_enclosed_points = vtkSmartPointer<vtkSelectEnclosedPoints>::New();
+        vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
         for (int i = 0; i < range_x; i++) {
             for (int j = 0; j < range_y; j++) {
                 for (int k = 0; k < range_z; k++) {
-                    double test_point[3] = {(i + 0.5) * sdf.m_spacing_x + aabb.m_x_min, (j + 0.5) * sdf.m_spacing_y + aabb.m_y_min, (k + 0.5) * sdf.m_spacing_z + aabb.m_z_min};
+                    double test_point[3];
+                    sdf.getPosition(i, j, k, test_point);
+                    points->InsertNextPoint(test_point);
+                }
+            }
+        }
+        vtkSmartPointer<vtkPolyData> points_poly_data = vtkSmartPointer<vtkPolyData>::New();
+        points_poly_data->SetPoints(points);
+        select_enclosed_points->SetInputData(points_poly_data);
+        select_enclosed_points->SetSurfaceData(poly_data);
+        select_enclosed_points->Update();
 
-                    double origin[3] = {(i + 0.5) * sdf.m_spacing_x + aabb.m_x_min, aabb.m_y_max, (k + 0.5) * sdf.m_spacing_z + aabb.m_z_min};
+        for (int i = 0; i < range_x; i++) {
+            for (int j = 0; j < range_y; j++) {
+                for (int k = 0; k < range_z; k++) {
+                    double test_point[3];
+                    sdf.getPosition(i, j, k, test_point);
+
                     double closest_point[3];
                     double closest_point_dist2;
                     vtkIdType cell_id;
                     int sub_id;
                     vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
-                    cellLocator->FindClosestPoint(test_point, closest_point, cell, cell_id, sub_id, closest_point_dist2);
+                    cell_locator->FindClosestPoint(test_point, closest_point, cell, cell_id, sub_id, closest_point_dist2);
                     double distance = sqrt(closest_point_dist2);
 
-                    // vtkSmartPointer<vtkIdList> cell_ids = vtkSmartPointer<vtkIdList>::New();
-                    // cellLocator->FindCellsAlongLine(test_point, origin, 0.000001, cell_ids);
-
-                    // if (distance <= spacing) {
-                    //     distance = 0;
-                    // }
-                    // distance = (cell_ids->GetNumberOfIds() % 2 != 0) ? -distance : distance;
+                    distance = (select_enclosed_points->IsInside(sdf.getIndex(i, j, k))) ? -distance : distance;
                     sdf.setValue(i, j, k, distance);
                 }
             }
