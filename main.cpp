@@ -9,6 +9,7 @@
 #include <vtkImageData.h>
 #include <vtkImplicitPolyDataDistance.h>
 #include <vtkMarchingCubes.h>
+#include <vtkNIFTIImageWriter.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
@@ -17,8 +18,10 @@
 #include <vtkSmartPointer.h>
 
 int main(int argc, char *argv[]) {
-    if (argc < 6) {
-        std::cerr << "Usage: " << argv[0] << " Filename(.stl)"
+    if (argc < 7) {
+        std::cerr << "Usage: " << argv[0]
+                  << " InputFileName(.stl)"
+                  << " OutputFileName(.nii.gz)"
                   << " DilateValue(mm)"
                   << " Spacing(mm)"
                   << " Padding(mm)"
@@ -26,10 +29,10 @@ int main(int argc, char *argv[]) {
                   << std::endl;
         return EXIT_FAILURE;
     }
-    double dilate_value = atof(argv[2]);
-    double spacing = atof(argv[3]);
-    double padding = atof(argv[4]);
-    double simplification_rate = atof(argv[5]);
+    double dilate_value = atof(argv[3]);
+    double spacing = atof(argv[4]);
+    double padding = atof(argv[5]);
+    double simplification_rate = atof(argv[6]);
 
     vtkSmartPointer<vtkSTLReader> reader = vtkSmartPointer<vtkSTLReader>::New();
     reader->SetFileName(argv[1]);
@@ -99,6 +102,13 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+
+    vtkSmartPointer<vtkNIFTIImageWriter> writer = vtkSmartPointer<vtkNIFTIImageWriter>::New();
+    writer->SetFileName(argv[2]);
+    writer->SetInputData(image_data);
+    writer->SetDescription("This is SDF");
+    writer->SetQFac(1);
+    writer->Write();
 
     vtkSmartPointer<vtkMarchingCubes> marchingCubes = vtkSmartPointer<vtkMarchingCubes>::New();
     marchingCubes->SetInputData(image_data);
