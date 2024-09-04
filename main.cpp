@@ -24,12 +24,12 @@ int main(int argc, char *argv[]) {
         std::cerr << "Usage: " << argv[0]
                   << " InputStlFileName(.stl 0 for none)"
                   << " InputSdfFileName(.nii.gz 0 for none)"
-                  << " OutputStlFileName(.stl)"
-                  << " OutputSdfFileName(.nii.gz)"
+                  << " OutputStlFileName(.stl 0 for none)"
+                  << " OutputSdfFileName(.nii.gz 0 for none)"
                   << " DilateValue(mm)"
-                  << " Spacing(mm)"
-                  << " Padding(mm)"
-                  << " SimplificationRate(0.0-1.0)"
+                  << " Spacing(mm useless if has input SDF)"
+                  << " Padding(mm useless if has input SDF)"
+                  << " SimplificationRate(0.0-1.0 useless if has input SDF)"
                   << std::endl;
         return EXIT_FAILURE;
     }
@@ -120,12 +120,14 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    vtkSmartPointer<vtkNIFTIImageWriter> nifti_writer = vtkSmartPointer<vtkNIFTIImageWriter>::New();
-    nifti_writer->SetFileName(argv[4]);
-    nifti_writer->SetInputData(image_data);
-    nifti_writer->SetDescription("This is SDF");
-    nifti_writer->SetQFac(1);
-    nifti_writer->Write();
+    if (strcmp(argv[4], "0") != 0) {
+        vtkSmartPointer<vtkNIFTIImageWriter> nifti_writer = vtkSmartPointer<vtkNIFTIImageWriter>::New();
+        nifti_writer->SetFileName(argv[4]);
+        nifti_writer->SetInputData(image_data);
+        nifti_writer->SetDescription("This is SDF");
+        nifti_writer->SetQFac(1);
+        nifti_writer->Write();
+    }
 
     vtkSmartPointer<vtkMarchingCubes> marchingCubes = vtkSmartPointer<vtkMarchingCubes>::New();
     marchingCubes->SetInputData(image_data);
@@ -133,10 +135,12 @@ int main(int argc, char *argv[]) {
     marchingCubes->Update();
     vtkSmartPointer<vtkPolyData> result_poly_data = marchingCubes->GetOutput();
 
-    vtkSmartPointer<vtkSTLWriter> stl_writer = vtkSmartPointer<vtkSTLWriter>::New();
-    stl_writer->SetFileName(argv[3]);
-    stl_writer->SetInputData(result_poly_data);
-    stl_writer->Write();
+    if (strcmp(argv[3], "0") != 0) {
+        vtkSmartPointer<vtkSTLWriter> stl_writer = vtkSmartPointer<vtkSTLWriter>::New();
+        stl_writer->SetFileName(argv[3]);
+        stl_writer->SetInputData(result_poly_data);
+        stl_writer->Write();
+    }
 
     vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
     mapper->SetInputData(result_poly_data);
