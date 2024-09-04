@@ -12,9 +12,11 @@
 #include <vtkNIFTIImageReader.h>
 #include <vtkNIFTIImageWriter.h>
 #include <vtkPolyDataMapper.h>
+#include <vtkPolyDataNormals.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
+#include <vtkReverseSense.h>
 #include <vtkSTLReader.h>
 #include <vtkSTLWriter.h>
 #include <vtkSelectEnclosedPoints.h>
@@ -146,7 +148,18 @@ int main(int argc, char *argv[]) {
     marchingCubes->SetInputData(image_data);
     marchingCubes->SetValue(0, dilate_value);
     marchingCubes->Update();
-    vtkSmartPointer<vtkPolyData> result_poly_data = marchingCubes->GetOutput();
+    vtkSmartPointer<vtkPolyData> mc_poly_data = marchingCubes->GetOutput();
+
+    vtkSmartPointer<vtkPolyDataNormals> norm_filter = vtkSmartPointer<vtkPolyDataNormals>::New();
+    norm_filter->SetInputData(mc_poly_data);
+    norm_filter->ConsistencyOn();
+    norm_filter->SplittingOff();
+    norm_filter->Update();
+    vtkSmartPointer<vtkReverseSense> reverse_filter = vtkSmartPointer<vtkReverseSense>::New();
+    reverse_filter->SetInputData(norm_filter->GetOutput());
+    reverse_filter->ReverseNormalsOn();
+    reverse_filter->Update();
+    vtkSmartPointer<vtkPolyData> result_poly_data = reverse_filter->GetOutput();
 
     if (strcmp(argv[3], "0") != 0) {
         vtkSmartPointer<vtkSTLWriter> stl_writer = vtkSmartPointer<vtkSTLWriter>::New();
