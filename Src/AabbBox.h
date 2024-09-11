@@ -9,7 +9,6 @@ class AabbBox {
                                                                                                   m_y_max(y_max),
                                                                                                   m_z_min(z_min),
                                                                                                   m_z_max(z_max){
-
                                                                                                   };
     double m_x_min;
     double m_x_max;

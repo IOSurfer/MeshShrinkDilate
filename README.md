@@ -1,19 +1,19 @@
 # MeshShrinkDilate
 An application that converts a watertight mesh into a signed distance field(SDF), enabling precise dilation and shrinkage of the mesh.
 
-![demo](demo.gif)
+![demo](Doc/demo.gif)
 
 original mesh
 
-![origin](origin.jpg)
+![origin](Doc/origin.jpg)
 
 dilated mesh
 
-![dilated](dilated.jpg)
+![dilated](Doc/dilated.jpg)
 
 shrinked mesh
 
-![shrinked](shrinked.jpg)
+![shrinked](Doc/shrinked.jpg)
 
 ## Usage
 Start with either a watertight mesh in .stl format or a pre-generated SDF file in .nii.gz format.

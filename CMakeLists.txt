@@ -14,6 +14,6 @@ find_package(VTK REQUIRED)
 
 include(${VTK_USE_FILE})
 
-add_executable(${PROJECT_NAME} main.cpp AabbBox.h AabbBox.cpp SignedDistanceField.h SignedDistanceField.cpp)
+add_executable(${PROJECT_NAME} Src/main.cpp Src/AabbBox.h Src/AabbBox.cpp Src/SignedDistanceField.h Src/SignedDistanceField.cpp)
 
 target_link_libraries(${PROJECT_NAME} ${VTK_LIBRARIES})
